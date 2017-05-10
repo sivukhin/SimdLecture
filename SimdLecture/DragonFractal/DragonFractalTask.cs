@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Numerics;
 
 namespace Fractals
 {
@@ -36,28 +37,25 @@ namespace Fractals
 		public static void DrawDragonFractal(Action<double, double> updatePoint, int iterationsCount, int seed)
 		{
 		    var random = new RandomBitSource(seed);
+
+		    double angle1 = Math.PI / 4;
+		    double angle2 = Math.PI - Math.PI / 4;
             double scale = Math.Sqrt(2);
-            double cosPI_4 = Math.Cos(Math.PI / 4);
-            double sinPI_4 = Math.Sin(Math.PI / 4);
-            double x = 1, y = 0;
-		    for (int i = 0; i < iterationsCount; i++)
+            var transform1 = new Matrix3x2(
+                (float)(+Math.Cos(angle1) / scale), (float)(Math.Sin(angle1) / scale), 
+                (float)(-Math.Sin(angle1) / scale), (float)(Math.Cos(angle1) / scale),
+                0, 0);
+		    var transform2 = new Matrix3x2(
+		        (float)(Math.Cos(angle2) / scale), (float)(Math.Sin(angle2) / scale),
+		        (float)(-Math.Sin(angle2) / scale), (float)(Math.Cos(angle2) / scale),
+		        1, 0);
+            var point = new Vector2(1, 0);
+            for (int i = 0; i < iterationsCount; i++)
 		    {
 		        var transformation = random.NextBit();
-		        double newX, newY;
-                if (transformation == 0)
-                {
-                    newX = (x * cosPI_4 - y * sinPI_4) / scale;
-                    newY = (x * sinPI_4 + y * cosPI_4) / scale;
-                }
-                else
-                {
-                    newX = (-x * cosPI_4 - y * sinPI_4) / Math.Sqrt(2) + 1;
-                    newY = (x * sinPI_4 - y * cosPI_4) / Math.Sqrt(2);
-                }
-		        x = newX;
-		        y = newY;
-                updatePoint(x, y);
-            }
+		        point = Vector2.Transform(point, transformation == 0 ? transform1 : transform2);
+		        updatePoint(point.X, point.Y);
+		    }
 		}
 	}
 }

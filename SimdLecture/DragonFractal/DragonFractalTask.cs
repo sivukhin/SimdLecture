@@ -8,15 +8,38 @@ using System.Drawing;
 
 namespace Fractals
 {
-    public static class DragonFractalTask
+    public class RandomBitSource
+    {
+        private Random Random { get; }
+        private uint value;
+        private int shift;
+        public RandomBitSource(int seed)
+        {
+            Random = new Random(seed);
+            value = 0;
+            shift = -1;
+        }
+
+        public uint NextBit()
+        {
+            if (shift == 32)
+            {
+                value = (uint)Random.Next();
+                shift = -1;
+            }
+            shift++;
+            return (value >> shift) & 1;
+        }
+    }
+	public static class DragonFractalTask
 	{
 		public static void DrawDragonFractal(Action<double, double> updatePoint, int iterationsCount, int seed)
 		{
-		    var random = new Random(seed);
+		    var random = new RandomBitSource(seed);
 		    double x = 1, y = 0;
 		    for (int i = 0; i < iterationsCount; i++)
 		    {
-		        var transformation = random.Next() & 1;
+		        var transformation = random.NextBit();
 		        double newX, newY;
                 if (transformation == 0)
                 { 

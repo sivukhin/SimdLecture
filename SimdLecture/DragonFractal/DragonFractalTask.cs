@@ -36,20 +36,23 @@ namespace Fractals
 		public static void DrawDragonFractal(Action<double, double> updatePoint, int iterationsCount, int seed)
 		{
 		    var random = new RandomBitSource(seed);
-		    double x = 1, y = 0;
+            double scale = Math.Sqrt(2);
+            double cosPI_4 = Math.Cos(Math.PI / 4);
+            double sinPI_4 = Math.Sin(Math.PI / 4);
+            double x = 1, y = 0;
 		    for (int i = 0; i < iterationsCount; i++)
 		    {
 		        var transformation = random.NextBit();
 		        double newX, newY;
                 if (transformation == 0)
-                { 
-		            newX = (x * Math.Cos(Math.PI / 4) - y * Math.Sin(Math.PI / 4)) / Math.Sqrt(2);
-                    newY = (x * Math.Sin(Math.PI / 4) + y * Math.Cos(Math.PI / 4)) / Math.Sqrt(2);
+                {
+                    newX = (x * cosPI_4 - y * sinPI_4) / scale;
+                    newY = (x * sinPI_4 + y * cosPI_4) / scale;
                 }
                 else
                 {
-                    newX = (x * Math.Cos(Math.PI - Math.PI / 4) - y * Math.Sin(Math.PI - Math.PI / 4)) / Math.Sqrt(2) + 1;
-                    newY = (x * Math.Sin(Math.PI - Math.PI / 4) + y * Math.Cos(Math.PI - Math.PI / 4)) / Math.Sqrt(2);
+                    newX = (-x * cosPI_4 - y * sinPI_4) / Math.Sqrt(2) + 1;
+                    newY = (x * sinPI_4 - y * cosPI_4) / Math.Sqrt(2);
                 }
 		        x = newX;
 		        y = newY;

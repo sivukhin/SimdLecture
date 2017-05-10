@@ -10,11 +10,8 @@ namespace Fractals
 {
 	internal static class DragonFractalTask
 	{
-		public static void DrawDragonFractal(Pixels pixels, int iterationsCount, int seed)
+		public static void DrawDragonFractal(Action<double, double> updatePoint, int iterationsCount, int seed)
 		{
-            var stopwatch = new Stopwatch();
-		    stopwatch.Start();
-
 		    var random = new Random(seed);
 		    double x = 1, y = 0;
 		    for (int i = 0; i < iterationsCount; i++)
@@ -33,9 +30,8 @@ namespace Fractals
                 }
 		        x = newX;
 		        y = newY;
-                pixels.SetPixel(x, y);
+                updatePoint(x, y);
             }
-		    Console.WriteLine(stopwatch.ElapsedMilliseconds);
 		}
 	}
 }

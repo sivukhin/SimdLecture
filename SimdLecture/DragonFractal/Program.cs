@@ -15,7 +15,7 @@ namespace Fractals
 			var image = new Bitmap(800, 800, PixelFormat.Format24bppRgb);
 			using (var g = Graphics.FromImage(image))
 				g.Clear(Color.Black);
-			DragonFractalTask.DrawDragonFractal(pixels, 10000000, 0);
+			DragonFractalTask.DrawDragonFractal((x, y) => pixels.SetPixel(x, y), 10000000, 0);
 			pixels.DrawToBitmap(image);
 
 			// При желании можно сохранить созданное изображение в файл вот так:

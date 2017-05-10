@@ -8,7 +8,7 @@ using System.Drawing;
 
 namespace Fractals
 {
-	internal static class DragonFractalTask
+    public static class DragonFractalTask
 	{
 		public static void DrawDragonFractal(Action<double, double> updatePoint, int iterationsCount, int seed)
 		{

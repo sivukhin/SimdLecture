@@ -19,14 +19,9 @@ namespace SimdLecture
         private static void TestAllSumImplementations()
         {
             var instance = new SumLoopBenchmark();
-            EstimateTime(instance.SimdUnrolledForSum);
             EstimateTime(instance.SimdForSum);
             EstimateTime(instance.ForeachSum);
-            EstimateTime(instance.UnrolledForSum);
             EstimateTime(instance.SimpleForSum);
-            EstimateTime(instance.GeneratedUnrolledForSum);
-            EstimateTime(instance.LinqAggregate);
-            EstimateTime(instance.LinqSum);
         }
 
         private static void TestAllSegmentCheckImplementations()

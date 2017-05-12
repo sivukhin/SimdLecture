@@ -22,16 +22,7 @@ namespace SimdLecture
         public SegmentCheckBenchmark()
         {
             var length = (int)1e8;
-            data = GenerateSequence(length);
-        }
-
-        private int[] GenerateSequence(int n)
-        {
-            var random = new Random(0);
-            var seq = new int[n];
-            for (int i = 0; i < n; i++)
-                seq[i] = random.Next();
-            return seq;
+            data = new Random(0).GenerateSequence(length);
         }
 
         [Benchmark]

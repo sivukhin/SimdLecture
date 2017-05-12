@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+using System;
+using System.Diagnostics;
+using System.Drawing;
 using System.Drawing.Imaging;
 
 // Это пространство имен содержит средства создания оконных приложений. В частности в нем находится класс Form.
@@ -9,33 +11,45 @@ namespace Fractals
 {
 	internal static class Program
 	{
+        private static Stopwatch Stopwatch = new Stopwatch();
 		private static void Main()
 		{
-			var pixels = new Pixels();
-			var image = new Bitmap(800, 800, PixelFormat.Format24bppRgb);
-			using (var g = Graphics.FromImage(image))
-				g.Clear(Color.Black);
-			DragonFractalTask.DrawDragonFractal(pixels, 10000000, 0);
-			pixels.DrawToBitmap(image);
+            Stopwatch.Start();
+		    int iterations = 10000000;
+            var image = new Bitmap(800, 800, PixelFormat.Format24bppRgb);
+		    image.ClearImage(Color.White);
 
-			// При желании можно сохранить созданное изображение в файл вот так:
-			// image.Save("dragon.png", ImageFormat.Png);
-
+            using (var pixels = new Pixels(image, EstimateBoundingBox()))
+            {
+                // ReSharper disable once AccessToDisposedClosure
+                DragonFractalTask.DrawDragonFractal((x, y) => pixels.SetPixel(x, y), iterations, 0);
+            }
 			ShowImageInWindow(image);
 		}
 
-		private static void ShowImageInWindow(Bitmap image)
+	    private static RectangleF EstimateBoundingBox()
+	    {
+            var boundingBox = new RectangleF(new PointF(1, 0), new SizeF(0, 0));
+            DragonFractalTask.DrawDragonFractal((x, y) =>
+            {
+                boundingBox = boundingBox.ExpandToPoint(new PointF((float)x, (float)y));
+            }, 1000, 10);
+	        boundingBox.Inflate(0.1f, 0.1f);
+	        return boundingBox;
+	    }
+
+	    private static void ShowImageInWindow(Bitmap image)
 		{
-			// Создание нового окна заданного размера:
 			var form = new Form
 			{
 				Text = "Harter–Heighway dragon",
 				ClientSize = image.Size
 			};
 
-			//Добавляем специальный элемент управления PictureBox, который умеет отображать созданное нами изображение.
 			form.Controls.Add(new PictureBox {Image = image, Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.CenterImage});
-			form.ShowDialog();
+            Stopwatch.Stop();
+		    Console.WriteLine(Stopwatch.ElapsedMilliseconds);
+            form.ShowDialog();
 		}
 	}
 }

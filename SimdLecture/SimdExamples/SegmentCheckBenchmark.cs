@@ -62,5 +62,26 @@ namespace SimdLecture
             }
             return count;
         }
+
+        [Benchmark]
+        public int SimdOptimizedForCountInRange()
+        {
+            var vectorSize = Vector<int>.Count;
+            var alignedLength = data.Length - data.Length % vectorSize;
+            var left = new Vector<int>(L);
+            var right = new Vector<int>(R);
+            var count = Vector<int>.Zero;
+            for (int i = 0; i < alignedLength; i += vectorSize)
+            {
+                var slice = new Vector<int>(data, i);
+                var result = Vector.LessThanOrEqual(left, slice) & Vector.LessThanOrEqual(slice, right);
+                result = Vector.Negate(result);
+                count = count + result;
+            }
+            var totalCount = 0;
+            for (int i = 0; i < vectorSize; i++)
+                totalCount += count[i];
+            return totalCount;
+        }
     }
 }

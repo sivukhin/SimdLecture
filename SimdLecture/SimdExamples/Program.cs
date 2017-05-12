@@ -27,6 +27,7 @@ namespace SimdLecture
         private static void TestAllSegmentCheckImplementations()
         {
             var instance = new SegmentCheckBenchmark();
+            EstimateTime(instance.SimdOptimizedForCountInRange);
             EstimateTime(instance.SimdForCountInRange);
             EstimateTime(instance.ForeachCountInRange);
             EstimateTime(instance.SimpleForCountInRange);

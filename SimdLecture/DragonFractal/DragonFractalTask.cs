@@ -38,23 +38,14 @@ namespace Fractals
 		{
 		    var random = new RandomBitSource(seed);
 
-		    double angle1 = Math.PI / 4;
-		    double angle2 = Math.PI - Math.PI / 4;
-            double scale = Math.Sqrt(2);
-            var transform1 = new Matrix3x2(
-                (float)(+Math.Cos(angle1) / scale), (float)(Math.Sin(angle1) / scale), 
-                (float)(-Math.Sin(angle1) / scale), (float)(Math.Cos(angle1) / scale),
-                0, 0);
-		    var transform2 = new Matrix3x2(
-		        (float)(Math.Cos(angle2) / scale), (float)(Math.Sin(angle2) / scale),
-		        (float)(-Math.Sin(angle2) / scale), (float)(Math.Cos(angle2) / scale),
-		        1, 0);
-            var point = new Vector2(1, 0);
+		    var transform1 = (Complex.One + Complex.ImaginaryOne) / 2;
+		    var transform2 = -(Complex.One - Complex.ImaginaryOne) / 2;
+		    var point = Complex.One;
             for (int i = 0; i < iterationsCount; i++)
 		    {
 		        var transformation = random.NextBit();
-		        point = Vector2.Transform(point, transformation == 0 ? transform1 : transform2);
-		        updatePoint(point.X, point.Y);
+		        point = transformation == 0 ? Complex.Multiply(transform1, point) : 1 + Complex.Multiply(transform2, point);
+		        updatePoint(point.Real, point.Imaginary);
 		    }
 		}
 	}

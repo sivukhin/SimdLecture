@@ -4,7 +4,7 @@ namespace SimdExamples.Test
 {
     public static class ParamsTestCaseData
     {
-        public static TestCaseData Create<T>(params T[] items)
+        public static TestCaseData Create<T>(T[] items)
         {
             return new TestCaseData(items);
         }

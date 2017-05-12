@@ -24,9 +24,11 @@ namespace SimdLecture
             data = new Random(0).GenerateSequence((int)1e8);
         }
 
-        public SegmentCheckBenchmark(int[] data)
+        public SegmentCheckBenchmark(int[] data, int l, int r)
         {
             this.data = data;
+            L = l;
+            R = r;
         }
 
         [Benchmark]
@@ -64,6 +66,8 @@ namespace SimdLecture
                 for (int s = 0; s < vectorSize; s++)
                     count -= result[s];
             }
+            for (int i = alignedLength; i < data.Length; i++)
+                count += L <= data[i] && data[i] <= R ? 1 : 0;
             return count;
         }
 
@@ -85,6 +89,8 @@ namespace SimdLecture
             var totalCount = 0;
             for (int i = 0; i < vectorSize; i++)
                 totalCount += count[i];
+            for (int i = alignedLength; i < data.Length; i++)
+                totalCount += L <= data[i] && data[i] <= R ? 1 : 0;
             return totalCount;
         }
     }

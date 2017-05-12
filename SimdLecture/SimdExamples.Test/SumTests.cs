@@ -28,11 +28,11 @@ namespace SimdExamples.Test
         }
 
         public static TestCaseData[] sumTests = {
-            ParamsTestCaseData.Create(0L, 1L, 2L).Returns(3),
-            ParamsTestCaseData.Create(1L, 0L, -1L).Returns(0),
-            ParamsTestCaseData.Create((long)1e10, (long)1e10).Returns((long)2e10),
-            ParamsTestCaseData.Create((long)1e10, -(long)1e10).Returns(0L),
-            ParamsTestCaseData.Create(0L, -1L, -1L).Returns(-2L),
+            ParamsTestCaseData.Create(new []{0L, 1L, 2L}).Returns(3),
+            ParamsTestCaseData.Create(new [] {1L, 0L, -1L}).Returns(0),
+            ParamsTestCaseData.Create(new [] {(long)1e10, (long)1e10}).Returns((long)2e10),
+            ParamsTestCaseData.Create(new [] {(long)1e10, -(long)1e10}).Returns(0L),
+            ParamsTestCaseData.Create(new [] {0L, -1L, -1L}).Returns(-2L),
         };
 
         [TestCaseSource(nameof(sumTests))]

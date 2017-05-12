@@ -36,9 +36,9 @@ namespace SimdLecture
         private static void Main(string[] args)
         {
             //TestAllSumImplementations();
-            TestAllSegmentCheckImplementations();
+            //TestAllSegmentCheckImplementations();
             //BenchmarkRunner.Run<SumLoopBenchmark>();
-            //BenchmarkRunner.Run<SegmentCheckBenchmark>();
+            BenchmarkRunner.Run<SegmentCheckBenchmark>();
         }
     }
 }

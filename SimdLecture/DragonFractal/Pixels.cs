@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -30,7 +29,6 @@ namespace Fractals
         private readonly Bitmap image;
         private readonly BitmapData imageData;
         private readonly int pixelSize;
-        private readonly List<Tuple<double, double>> PixelsSet;
         private readonly float scale;
         private readonly double pixelDeltaX;
         private readonly double pixelDeltaY;

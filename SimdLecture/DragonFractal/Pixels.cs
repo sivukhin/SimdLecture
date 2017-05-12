@@ -1,52 +1,71 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 
 namespace Fractals
 {
-	public class Pixels
-	{
-		public readonly List<Tuple<double, double>> PixelsSet;
+    public static class DrawingExtensions
+    {
+        public static RectangleF ExpandToPoint(this RectangleF rectangle, PointF point)
+        {
+            var leftX = Math.Min(rectangle.Left, point.X);
+            var topY = Math.Min(rectangle.Top, point.Y);
 
-		public Pixels()
-		{
-			PixelsSet = new List<Tuple<double, double>>();
-		}
+            var rightX = Math.Max(rectangle.Right, point.X);
+            var bottomY = Math.Max(rectangle.Bottom, point.Y);
+            return new RectangleF(leftX, topY, rightX - leftX, bottomY - topY);
+        }
 
-		public void SetPixel(double x, double y)
-		{
-			PixelsSet.Add(Tuple.Create(x, y));
-		}
+        public static Image ClearImage(this Image image, Color color)
+        {
+            using (var graphics = Graphics.FromImage(image))
+                graphics.Clear(color);
+            return image;
+        }
+    }
+    public class Pixels : IDisposable
+    {
+        private readonly Bitmap image;
+        private readonly BitmapData imageData;
+        private readonly int pixelSize;
+        private readonly List<Tuple<double, double>> PixelsSet;
+        private readonly float scale;
+        private readonly double pixelDeltaX;
+        private readonly double pixelDeltaY;
 
-		public void DrawToBitmap(Bitmap image)
-		{
-			if (PixelsSet.Count == 0) return;
-			var maxX = PixelsSet.Max(p => p.Item1);
-			var maxY = PixelsSet.Max(p => p.Item2);
-			var minX = PixelsSet.Min(p => p.Item1);
-			var minY = PixelsSet.Min(p => p.Item2);
-			var width = maxX - minX;
-			var height = maxY - minY;
-		    var scaleX = (image.Width-20) / width;
-			var scaleY = (image.Height-20) / height;
-			var scale = Math.Min(scaleX, scaleY);
+        public Pixels(Bitmap image, RectangleF boundingBox)
+        {
+            this.image = image;
+            imageData = image.LockBits(new Rectangle(new Point(0, 0), image.Size), ImageLockMode.ReadWrite, image.PixelFormat);
+            pixelSize = imageData.Stride / imageData.Width;
+            var scaleX = (imageData.Width - 20) / boundingBox.Width;
+            var scaleY = (imageData.Height - 20) / boundingBox.Height;
+            scale = Math.Min(scaleX, scaleY);
 
-            var intensity = new int[image.Width, image.Height];
-		    int maxIntensity = 0;
-            foreach (var pixel in PixelsSet)
-			{
-				var x = (pixel.Item1 - minX - width/2)*scale + image.Width/2.0;
-				var y = (pixel.Item2 - minY - height/2)*scale + image.Height/2.0;
-			    intensity[(int)x, (int)y]++;
-			    maxIntensity = Math.Max(intensity[(int)x, (int)y], maxIntensity);
-			}
-            for (int i = 0; i < intensity.GetLength(0); i++)
-		    for (int s = 0; s < intensity.GetLength(1); s++)
-		    {
-		        var componentValue = 255 * intensity[i, s] / maxIntensity;
-		        image.SetPixel(i, s, Color.FromArgb(componentValue, componentValue, 0));
-		    }
-		}
-	}
+            pixelDeltaX = -boundingBox.Left - boundingBox.Width / 2 + imageData.Width / 2.0 / scale;
+            pixelDeltaY = -boundingBox.Top - boundingBox.Height / 2 + imageData.Height / 2.0 / scale;
+        }
+
+        public unsafe void SetPixel(double x, double y)
+        {
+            var point = TransformPoint(x, y);
+            byte* ptr = (byte*)imageData.Scan0 + point.Item2 * imageData.Stride + point.Item1 * pixelSize;
+            var value = (int)ptr[0];
+            ptr[0] = ptr[1] = (byte)Math.Max(0, value - 3);
+        }
+
+        private Tuple<int, int> TransformPoint(double x, double y)
+        {
+            var nx = (int)((x + pixelDeltaX) * scale);
+            var ny = (int)((y + pixelDeltaY) * scale);
+            return Tuple.Create(nx, ny);
+        }
+
+        public void Dispose()
+        {
+            image.UnlockBits(imageData);
+        }
+    }
 }

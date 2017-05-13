@@ -54,6 +54,20 @@ namespace SimdExamples.Test
         {
             return summator(elements);
         }
+
+        public static TestCaseData[] sumLongOddTests = {
+            ParamsTestCaseData.Create(new []{0L, 1L, 2L}.RepeatSequence(11).ToArray()).Returns(33),
+            ParamsTestCaseData.Create(new [] {1L, 0L, -1L}.RepeatSequence(101).ToArray()).Returns(0),
+            ParamsTestCaseData.Create(new [] {(long)1e10, (long)1e10, 0}.RepeatSequence(101).ToArray()).Returns(101 * (long)2e10),
+            ParamsTestCaseData.Create(new [] {(long)1e10, -(long)1e10, 0}.RepeatSequence(101).ToArray()).Returns(0L),
+            ParamsTestCaseData.Create(new [] {0L, -1L, -1L}.RepeatSequence(21).ToArray()).Returns(-42L),
+        };
+
+        [TestCaseSource(nameof(sumLongOddTests))]
+        public long TestLongOddArray(long[] elements)
+        {
+            return summator(elements);
+        }
     }
 
     [TestFixture]

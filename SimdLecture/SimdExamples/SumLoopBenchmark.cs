@@ -15,7 +15,7 @@ namespace SimdLecture
 
         public SumLoopBenchmark()
         {
-            data = new Random(0).GenerateSequence((int)1e8).Cast<long>().ToArray();
+            data = new Random(0).GenerateSequence((int)1e8).Select(i => (long)i).ToArray();
         }
 
         public SumLoopBenchmark(long[] data)

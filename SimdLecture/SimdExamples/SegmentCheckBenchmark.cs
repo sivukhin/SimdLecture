@@ -21,7 +21,7 @@ namespace SimdLecture
 
         public SegmentCheckBenchmark()
         {
-            data = new Random(0).GenerateSequence((int)1e8);
+            data = new Random(0).GenerateIntSequence((int)1e8);
         }
 
         public SegmentCheckBenchmark(int[] data, int l, int r)

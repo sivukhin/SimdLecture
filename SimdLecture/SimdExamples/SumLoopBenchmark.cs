@@ -15,12 +15,18 @@ namespace SimdLecture
 
         public SumLoopBenchmark()
         {
-            data = new Random(0).GenerateSequence((int)1e8).Select(i => (long)i).ToArray();
+            data = new Random(0).GenerateLongSequence((int)1e8);
         }
 
         public SumLoopBenchmark(long[] data)
         {
             this.data = data;
+        }
+
+        [Benchmark]
+        public long LinqSum()
+        {
+            return data.Sum();
         }
 
         [Benchmark]
@@ -56,5 +62,26 @@ namespace SimdLecture
                 sum += data[i];
             return sum;
         }
+
+        [Benchmark]
+        public long Simd2ForSum()
+        {
+            Vector<long> sums1 = Vector<long>.Zero, sums2 = Vector<long>.Zero;
+            var vectorSize = Vector<long>.Count;
+            var step = 2 * vectorSize;
+            int alignedLength = data.Length - data.Length % step;
+            for (int i = 0; i < alignedLength; i += step)
+            {
+                sums1 += new Vector<long>(data, i);
+                sums2 += new Vector<long>(data, i + vectorSize);
+            }
+            long sum = 0;
+            for (int i = 0; i < vectorSize; i++)
+                sum += sums1[i] + sums2[i];
+            for (int i = alignedLength; i < data.Length; i++)
+                sum += data[i];
+            return sum;
+        }
+
     }
 }

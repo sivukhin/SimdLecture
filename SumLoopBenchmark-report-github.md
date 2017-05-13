@@ -13,9 +13,11 @@ Job Runtime(s):
 Job=FastBenchmark  TargetCount=10  
 
 ```
-       Method |        Mean |    StdErr |     StdDev |      Median |
-------------- |------------ |---------- |----------- |------------ |
-      LinqSum | 722.8332 ms | 7.3144 ms | 23.1301 ms | 715.2691 ms |
-   ForeachSum |  85.7738 ms | 0.8433 ms |  2.5298 ms |  85.1099 ms |
- SimpleForSum |  93.6699 ms | 1.5757 ms |  4.9829 ms |  91.0276 ms |
-   SimdForSum |  79.7799 ms | 0.1841 ms |  0.5523 ms |  79.9257 ms |
+
+
+|       Method |        Mean |    StdErr |     StdDev |      Median |
+|------------- |------------ |---------- |----------- |------------ |
+|      LinqSum | 722.8332 ms | 7.3144 ms | 23.1301 ms | 715.2691 ms |
+|   ForeachSum |  85.7738 ms | 0.8433 ms |  2.5298 ms |  85.1099 ms |
+| SimpleForSum |  93.6699 ms | 1.5757 ms |  4.9829 ms |  91.0276 ms |
+|   SimdForSum |  79.7799 ms | 0.1841 ms |  0.5523 ms |  79.9257 ms |

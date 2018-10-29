@@ -1,0 +1,1 @@
+add_executable(cpu-capabilities-main cpu-capabilities-main.cpp)

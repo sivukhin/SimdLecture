@@ -2,65 +2,59 @@
 #include <memory>
 #include <iostream>
 #include "sum-in-array.hpp"
+#include "array-allocator.hpp"
+#include "random.hpp"
 
 using namespace benchmark;
 
-template <typename T>
-class UnalignedArray {
-private:
-    T *array_;
-    size_t array_size_;
-
-public:
-    UnalignedArray(size_t array_size) : array_(nullptr), array_size_(array_size) {
-        array_ = new T[array_size + 1];
+static int64_t *InitializeWithRandomNumbers(int64_t *array, size_t length) {
+    auto random = Random(0);
+    for (size_t id = 0; id < length; id++) {
+        array[id] = random.NextLong(0, 1LL << 60);
     }
-    UnalignedArray(const UnalignedArray &other) = delete;
-    UnalignedArray(UnalignedArray &&other) : array_(other.array_), array_size_(other.array_size_) {
-        other.array_ = nullptr;
-        other.array_size_ = 0;
-    }
-    UnalignedArray &operator=(const UnalignedArray &other) = delete;
-    UnalignedArray &operator=(UnalignedArray &&other) = delete;
-    T *get() const {
-        return array_ + 1;
-    }
-    ~UnalignedArray() {
-        delete[] array_;
-    }
-};
-
-UnalignedArray<int64_t> AllocateUnalignedArray(size_t array_size) {
-    return UnalignedArray<int64_t>(array_size);
+    return array;
 }
 
-std::unique_ptr<int64_t[]> AllocateAlignedArray(size_t array_size) {
-    return std::unique_ptr<int64_t[]>(
-        reinterpret_cast<int64_t *>(aligned_alloc(256 / 8, array_size)));
+static void LoadAligned_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int64_t> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
+    for (auto _ : state) {
+        DoNotOptimize(SumArraySimd(array, size));
+    }
 }
 
-static void SumArraySimdAligned_Benchmark(State &state) {
-    auto array = AllocateAlignedArray(state.range(0));
+static void LoaduAligned_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int64_t> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
     for (auto _ : state) {
-        DoNotOptimize(SumArraySimd(array.get(), state.range(0)));
+        DoNotOptimize(SumArraySimdUnaligned(array, size));
     }
 }
-static void SumArraySisdAligned_Benchmark(State &state) {
-    auto array = AllocateAlignedArray(state.range(0));
+
+static void NaiveAligned_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int64_t> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
     for (auto _ : state) {
-        DoNotOptimize(SumArraySisd(array.get(), state.range(0)));
+        DoNotOptimize(SumArrayNaive(array, size));
     }
 }
-static void SumArraySimdUnaligned_Benchmark(State &state) {
-    auto array = AllocateUnalignedArray(state.range(0));
+static void LoaduUnaligned_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int64_t> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetUnaligned(), size);
     for (auto _ : state) {
-        DoNotOptimize(SumArraySimd(array.get(), state.range(0)));
+        DoNotOptimize(SumArraySimdUnaligned(array, size));
     }
 }
-static void SumArraySisdUnaligned_Benchmark(State &state) {
-    auto array = AllocateUnalignedArray(state.range(0));
+static void NaiveUnaligned_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int64_t> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetUnaligned(), size);
     for (auto _ : state) {
-        DoNotOptimize(SumArraySisd(array.get(), state.range(0)));
+        DoNotOptimize(SumArrayNaive(array, size));
     }
 }
 
@@ -70,9 +64,10 @@ static void CustomizeBenchmark(benchmark::internal::Benchmark *benchmark) {
     }
 }
 
-BENCHMARK(SumArraySimdUnaligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(SumArraySisdUnaligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(SumArraySimdAligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(SumArraySisdAligned_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(LoaduUnaligned_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(NaiveUnaligned_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(LoadAligned_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(LoaduAligned_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(NaiveAligned_Benchmark)->Apply(CustomizeBenchmark);
 
 BENCHMARK_MAIN();

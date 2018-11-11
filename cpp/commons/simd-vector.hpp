@@ -318,42 +318,56 @@ class SimdMaskedVector;
 template <typename T>
 class SimdVector {
 private:
-    std::unique_ptr<T[]> data_;
+    T *data_;
     size_t length_;
+    bool is_owner_;
 
 public:
     template <typename P>
     friend class SimdMaskedVector;
-    SimdVector(const std::vector<T> &other) : data_(), length_() {
+    SimdVector(const std::vector<T> &other) : data_(), length_(), is_owner_(true) {
         length_ = other.size();
-        auto data_ptr = aligned_alloc(256 / 8, length_ * sizeof(T));
-        data_ = std::unique_ptr<T[]>(reinterpret_cast<T *>(data_ptr));
-        memcpy(data_.get(), other.data(), sizeof(T) * length_);
+        data_ = reinterpret_cast<T *>(aligned_alloc(256 / 8, length_ * sizeof(T)));
+        if (length_ > 0) {
+            memcpy(data_, other.data(), sizeof(T) * length_);
+        }
     }
-    SimdVector(const SimdVector &other) : data_(nullptr), length_(0) {
+    SimdVector(const SimdVector &other) : data_(nullptr), length_(0), is_owner_(true) {
         length_ = other.length_;
-        auto data_ptr = aligned_alloc(256 / 8, length_ * sizeof(T));
-        data_ = std::unique_ptr<T[]>(reinterpret_cast<T *>(data_ptr));
-        memcpy(data_.get(), other.data_.get(), sizeof(T) * length_);
+        data_ = reinterpret_cast<T *>(aligned_alloc(256 / 8, length_ * sizeof(T)));
+        if (length_ > 0) {
+            memcpy(data_, other.data_, sizeof(T) * length_);
+        }
+    }
+    ~SimdVector() {
+        if (is_owner_) {
+            free(data_);
+        }
+    }
+    size_t Size() const {
+        return length_;
+    }
+    const T *Data() const {
+        return data_;
     }
     SimdVector &operator+=(const SimdVector<T> &other) {
-        ElementwiseOperation<T, OperationType::Plus>(data_.get(), other.data_.get(), length_);
+        ElementwiseOperation<T, OperationType::Plus>(data_, other.data_, length_);
         return *this;
     }
     SimdVector &operator-=(const SimdVector<T> &other) {
-        ElementwiseOperation<T, OperationType::Minus>(data_.get(), other.data_.get(), length_);
+        ElementwiseOperation<T, OperationType::Minus>(data_, other.data_, length_);
         return *this;
     }
     SimdVector &operator^=(const SimdVector<T> &other) {
-        ElementwiseOperation<T, OperationType::Xor>(data_.get(), other.data_.get(), length_);
+        ElementwiseOperation<T, OperationType::Xor>(data_, other.data_, length_);
         return *this;
     }
     SimdVector &operator&=(const SimdVector<T> &other) {
-        ElementwiseOperation<T, OperationType::And>(data_.get(), other.data_.get(), length_);
+        ElementwiseOperation<T, OperationType::And>(data_, other.data_, length_);
         return *this;
     }
     SimdVector &operator|=(const SimdVector<T> &other) {
-        ElementwiseOperation<T, OperationType::Or>(data_.get(), other.data_.get(), length_);
+        ElementwiseOperation<T, OperationType::Or>(data_, other.data_, length_);
         return *this;
     }
     SimdVector operator+(const SimdVector<T> &other) const {
@@ -377,16 +391,16 @@ public:
         return (new_vector |= other);
     }
     T AggregateSum() const {
-        return AggregateOperation<T, OperationType::Plus>(data_.get(), length_);
+        return AggregateOperation<T, OperationType::Plus>(data_, length_);
     }
     T AggregateXor() const {
-        return AggregateOperation<T, OperationType::Xor>(data_.get(), length_);
+        return AggregateOperation<T, OperationType::Xor>(data_, length_);
     }
     T AggregateAnd() const {
-        return AggregateOperation<T, OperationType::And>(data_.get(), length_);
+        return AggregateOperation<T, OperationType::And>(data_, length_);
     }
     T AggregateOr() const {
-        return AggregateOperation<T, OperationType::Or>(data_.get(), length_);
+        return AggregateOperation<T, OperationType::Or>(data_, length_);
     }
     const T &operator[](size_t index) const {
         return data_[index];
@@ -403,9 +417,10 @@ template <typename T>
 class SimdMaskedVector {
 private:
     bool inverted_;
-    std::unique_ptr<T[]> data_;
+    T *data_;
     size_t length_;
-    SimdMaskedVector(SimdVector<T> &&other) : inverted_(false), data_(std::move(other.data_)), length_(other.length_) {
+    SimdMaskedVector(SimdVector<T> &&other) : inverted_(false), data_(other.data_), length_(other.length_) {
+        other.data_ = nullptr;
     }
     SimdMaskedVector &Invert() {
         inverted_ = true;
@@ -413,29 +428,36 @@ private:
     }
 
 public:
-    SimdMaskedVector(SimdMaskedVector<T> &&other) : inverted_(other.inverted_), data_(std::move(other.data_)), length_(other.length_) {
+    SimdMaskedVector(SimdMaskedVector<T> &&other) : inverted_(other.inverted_), data_(other.data_), length_(other.length_) {
+        if (&other != this) {
+            other.data_ = nullptr;
+        }
     }
     SimdMaskedVector(const SimdMaskedVector<T> &other) : inverted_(false), data_(), length_() {
         length_ = other.length_;
         inverted_ = other.inverted_;
 
-        auto data_ptr = aligned_alloc(256 / 8, length_ * sizeof(T));
-        data_ = std::unique_ptr<T[]>(reinterpret_cast<T *>(data_ptr));
-        memcpy(data_.get(), other.data_.get(), sizeof(T) * length_);
+        data_ = reinterpret_cast<T *>(aligned_alloc(256 / 8, length_ * sizeof(T)));
+        if (length_ > 0) {
+            memcpy(data_, other.data_, sizeof(T) * length_);
+        }
+    }
+    ~SimdMaskedVector() {
+        free(data_);
     }
     template <typename P>
     friend class SimdVector;
     bool Any() const {
         if (!inverted_) {
-            return AggregateOperation<T, OperationType::Or>(data_.get(), length_) != 0;
+            return AggregateOperation<T, OperationType::Or>(data_, length_) != 0;
         }
-        return AggregateOperation<T, OperationType::And>(data_.get(), length_) == 0;
+        return AggregateOperation<T, OperationType::And>(data_, length_) == 0;
     }
     bool All() const {
         if (!inverted_) {
-            return AggregateOperation<T, OperationType::And>(data_.get(), length_) != 0;
+            return AggregateOperation<T, OperationType::And>(data_, length_) != 0;
         }
-        return AggregateOperation<T, OperationType::Or>(data_.get(), length_) == 0;
+        return AggregateOperation<T, OperationType::Or>(data_, length_) == 0;
     }
     bool None() const {
         return !All();
@@ -445,14 +467,14 @@ public:
 template <typename T>
 SimdMaskedVector<T> SimdVector<T>::operator==(const SimdVector<T> &other) const {
     auto mask = SimdVector<T>(*this);
-    ElementwiseOperation<T, OperationType::Equal>(mask.data_.get(), other.data_.get(), mask.length_);
+    ElementwiseOperation<T, OperationType::Equal>(mask.data_, other.data_, mask.length_);
     return SimdMaskedVector<T>(std::move(mask));
 }
 
 template <typename T>
 SimdMaskedVector<T> SimdVector<T>::operator>(const SimdVector<T> &other) const {
     auto mask = SimdVector<T>(*this);
-    ElementwiseOperation<T, OperationType::Greater>(mask.data_.get(), other.data_.get(), mask.length_);
+    ElementwiseOperation<T, OperationType::Greater>(mask.data_, other.data_, mask.length_);
     return SimdMaskedVector<T>(std::move(mask));
 }
 

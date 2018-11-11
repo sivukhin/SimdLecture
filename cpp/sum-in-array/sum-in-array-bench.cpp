@@ -86,7 +86,7 @@ static void MemoryAccessUnaligned_Benchmark(State &state) {
 }
 
 static void CustomizeBenchmark(benchmark::internal::Benchmark *benchmark) {
-    for (int size = 100; size <= 20000000; size *= 2) {
+    for (int size = 2; size <= (1 << 27); size *= 2) {
         benchmark->Arg(size);
     }
 }

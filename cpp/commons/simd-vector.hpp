@@ -282,7 +282,7 @@ public:
 template <typename T, OperationType Operation>
 void ElementwiseOperation(T first[], T second[], size_t length) {
     constexpr size_t block_size = 32 / sizeof(T);
-    for (size_t id = 0; id + block_size < length; id += block_size) {
+    for (size_t id = 0; id + block_size <= length; id += block_size) {
         auto current_block = LoadIntegerSimd(first + id);
         auto other_block = LoadIntegerSimd(second + id);
         current_block = SimdTypedExtensions<T, Operation>::ApplyVectorOperation(current_block, other_block);
@@ -297,7 +297,7 @@ template <typename T, OperationType Operation>
 T AggregateOperation(T target[], size_t length) {
     auto blocks_value = CreateSingleValueIntegerSimd(Identity<T, Operation>);
     constexpr size_t block_size = 32 / sizeof(T);
-    for (size_t id = 0; id + block_size < length; id += block_size) {
+    for (size_t id = 0; id + block_size <= length; id += block_size) {
         auto current_value = LoadIntegerSimd(target + id);
         blocks_value = SimdTypedExtensions<T, Operation>::ApplyVectorOperation(blocks_value, current_value);
     }
@@ -325,6 +325,8 @@ private:
 public:
     template <typename P>
     friend class SimdMaskedVector;
+    SimdVector(T *data, size_t length) : data_(data), length_(length), is_owner_(false) {
+    }
     SimdVector(const std::vector<T> &other) : data_(), length_(), is_owner_(true) {
         length_ = other.size();
         data_ = reinterpret_cast<T *>(aligned_alloc(256 / 8, length_ * sizeof(T)));

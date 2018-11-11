@@ -99,6 +99,19 @@ TYPED_TEST(SimdVectorTest, TestEmptyAggregateAnd) {
     EXPECT_EQ(simd_vector.AggregateAnd(), -1);
 }
 
+TYPED_TEST(SimdVectorTest, TestExactlyOneSimdBlockAggregate) {
+    auto simd_vector = SimdVector<TypeParam>(std::vector<TypeParam>{0, 1, 2, 3});
+    EXPECT_EQ(simd_vector.AggregateSum(), 6);
+}
+
+TYPED_TEST(SimdVectorTest, TestExactlyOneSimdBlockElementwise) {
+    auto simd_vector = SimdVector<TypeParam>(std::vector<TypeParam>{0, 1, 2, 3});
+    simd_vector += simd_vector;
+    for (size_t id = 0; id < 4; id++) {
+        EXPECT_EQ(simd_vector[id], 2 * id);
+    }
+}
+
 TYPED_TEST(SimdVectorTest, TestEqualVectors) {
     auto simd_vector = SimdVector<TypeParam>(GenerateVector<TypeParam>(0, 101));
     EXPECT_TRUE((simd_vector == simd_vector).All());

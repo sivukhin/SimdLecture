@@ -40,4 +40,11 @@ int64_t SumArrayNaive(const int64_t *data, size_t length) {
     return sum;
 }
 
+int64_t MemoryAccessBaseline(const int64_t *data, size_t length) {
+    for (size_t id = 0; id < length; id += 4) {
+        volatile int64_t ignored = data[id];
+    }
+    return 0;
+}
+
 #endif  // CPP_SUM_IN_ARRAY_HPP

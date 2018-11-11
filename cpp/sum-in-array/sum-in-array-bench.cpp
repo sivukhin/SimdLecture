@@ -58,8 +58,26 @@ static void NaiveUnaligned_Benchmark(State &state) {
     }
 }
 
+static void MemoryAccessAligned_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int64_t> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
+    for (auto _ : state) {
+        DoNotOptimize(MemoryAccessBaseline(array, size));
+    }
+}
+
+static void MemoryAccessUnaligned_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int64_t> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetUnaligned(), size);
+    for (auto _ : state) {
+        DoNotOptimize(MemoryAccessBaseline(array, size));
+    }
+}
+
 static void CustomizeBenchmark(benchmark::internal::Benchmark *benchmark) {
-    for (int size = 100; size <= 1000000; size *= 2) {
+    for (int size = 100; size <= 20000000; size *= 2) {
         benchmark->Arg(size);
     }
 }
@@ -69,5 +87,7 @@ BENCHMARK(NaiveUnaligned_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(LoadAligned_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(LoaduAligned_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(NaiveAligned_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(MemoryAccessAligned_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(MemoryAccessUnaligned_Benchmark)->Apply(CustomizeBenchmark);
 
 BENCHMARK_MAIN();

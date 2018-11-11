@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 sns.set(style='ticks', palette='Set2')
 parser = argparse.ArgumentParser(description='Generate chart based on benchmark results')
 parser.add_argument('--source', '-s', type=str, help='JSON file with the benchmark results')
+parser.add_argument('--dest_prefix', '-d', type=str, help='Prefix of the name of the output png file with graph')
 parser.add_argument('--baseline', '-b', type=str, help='Baseline algorithm name')
 
 def gather_benchmarks(benchmarks):
@@ -46,7 +47,7 @@ def create_relative_plot_title(context, baseline_name):
     return ('Benchmarks from {} relative to {}\n(Build type: {}, CPU scaling enabled: {}, MHz per CPU: {})'
             .format(executable, baseline_name, build_type, cpu_scaling_enabled, mhz_per_cpu))
 
-def draw_common_plot(benchmarks, context):
+def draw_common_plot(benchmarks, context, dest_prefix):
     plt.clf()
     for benchmark_name in benchmarks.keys():
         benchmark = benchmarks[benchmark_name]
@@ -55,9 +56,9 @@ def draw_common_plot(benchmarks, context):
         plt.plot(xs, ys, label=extract_benchmark_name(benchmark_name))
     plt.legend()
     plt.title(create_common_plot_title(context))
-    plt.savefig('{}_results.png'.format(extract_benchmark_filename(context)))
+    plt.savefig('{}_{}_results.png'.format(dest_prefix, extract_benchmark_filename(context)))
 
-def draw_relative_plot(benchmarks, context, baseline_name):
+def draw_relative_plot(benchmarks, context, baseline_name, dest_prefix):
     plt.clf()
     baseline_data = list(map(lambda x: x[1] / x[0], benchmarks[baseline_name]))
     for benchmark_name in benchmarks.keys():
@@ -68,16 +69,16 @@ def draw_relative_plot(benchmarks, context, baseline_name):
     plt.ylim(bottom=0)
     plt.legend()
     plt.title(create_relative_plot_title(context, baseline_name))
-    plt.savefig('{}_results_relative.png'.format(extract_benchmark_filename(context)))
+    plt.savefig('{}_{}_results_relative.png'.format(dest_prefix, extract_benchmark_filename(context)))
 
 def main():
     args = parser.parse_args()
     with open(args.source, 'r') as f:
         data = json.load(f)
     benchmarks = gather_benchmarks(data['benchmarks'])
-    draw_common_plot(benchmarks, data['context'])
+    draw_common_plot(benchmarks, data['context'], args.dest_prefix)
     if args.baseline:
-        draw_relative_plot(benchmarks, data['context'], args.baseline)
+        draw_relative_plot(benchmarks, data['context'], args.baseline, args.dest_prefix)
 
 if __name__ == '__main__':
     main()

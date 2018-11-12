@@ -56,6 +56,30 @@ TYPED_TEST(SimdVectorTest, TestSubtractDifferentVectors) {
         EXPECT_EQ(simd_vector1[i], data1[i] - data2[i]);
 }
 
+TYPED_TEST(SimdVectorTest, TestMax) {
+    auto data1 = GenerateVector<TypeParam>(0, 101);
+    auto data2 = GenerateVector<TypeParam>(0, 101);
+    std::reverse(data2.begin(), data2.end());
+    auto simd_vector1 = SimdVector<TypeParam>(data1);
+    auto simd_vector2 = SimdVector<TypeParam>(data2);
+    simd_vector1.MaxWith(simd_vector2);
+    for (size_t id = 0; id < data1.size(); id++) {
+        EXPECT_EQ(simd_vector1[id], std::max(data1[id], data2[id]));
+    }
+}
+
+TYPED_TEST(SimdVectorTest, TestMin) {
+    auto data1 = GenerateVector<TypeParam>(0, 101);
+    auto data2 = GenerateVector<TypeParam>(0, 101);
+    std::reverse(data2.begin(), data2.end());
+    auto simd_vector1 = SimdVector<TypeParam>(data1);
+    auto simd_vector2 = SimdVector<TypeParam>(data2);
+    simd_vector1.MinWith(simd_vector2);
+    for (size_t id = 0; id < data1.size(); id++) {
+        EXPECT_EQ(simd_vector1[id], std::min(data1[id], data2[id]));
+    }
+}
+
 TYPED_TEST(SimdVectorTest, TestAggregateSum) {
     auto data = std::vector<TypeParam>(101);
     for (size_t id = 0; id < data.size(); id++)
@@ -178,4 +202,24 @@ TYPED_TEST(SimdVectorTest, TestDifferentVectorRelations) {
 
     EXPECT_FALSE((simd_vector1 >= simd_vector2).All());
     EXPECT_TRUE((simd_vector1 >= simd_vector2).Any());
+}
+
+TEST(SimdVectorTest, TestBigLongLongMax) {
+    auto data1 = std::vector<long long>{(1LL << 45LL) - 1, -(1LL << 50LL) + 1, (1LL << 55LL) - 1, -(1LL << 60LL) + 1};
+    auto data2 = std::vector<long long>{-(1LL << 45LL) + 1, (1LL << 50LL) - 1, -(1LL << 55LL) + 1, (1LL << 60LL) - 1};
+    auto simd_vector = SimdVector<long long>(data1);
+    simd_vector.MaxWith(SimdVector<long long>(data2));
+    for (size_t id = 0; id < data1.size(); id++) {
+        EXPECT_EQ(simd_vector[id], std::max(data1[id], data2[id]));
+    }
+}
+
+TEST(SimdVectorTest, TestBigLongLongMin) {
+    auto data1 = std::vector<long long>{(1LL << 45LL) - 1, -(1LL << 50LL) + 1, (1LL << 55LL) - 1, -(1LL << 60LL) + 1};
+    auto data2 = std::vector<long long>{-(1LL << 45LL) + 1, (1LL << 50LL) - 1, -(1LL << 55LL) + 1, (1LL << 60LL) - 1};
+    auto simd_vector = SimdVector<long long>(data1);
+    simd_vector.MinWith(SimdVector<long long>(data2));
+    for (size_t id = 0; id < data1.size(); id++) {
+        EXPECT_EQ(simd_vector[id], std::min(data1[id], data2[id]));
+    }
 }

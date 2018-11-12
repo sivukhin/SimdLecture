@@ -1,13 +1,14 @@
 #ifndef PROJECT_SIMD_VECTOR_HPP
 #define PROJECT_SIMD_VECTOR_HPP
 
+#include <limits>
 #include <memory>
 #include <vector>
 #include <cstring>
 #include <stdexcept>
 #include <immintrin.h>
 
-enum class OperationType { Plus, Minus, Xor, And, Or, Equal, Greater };
+enum class OperationType { Plus, Minus, Xor, And, Or, Equal, Greater, Max, Min };
 
 template <typename T, OperationType Operation>
 T Identity = 0;
@@ -20,6 +21,12 @@ T Identity<T, OperationType::Equal> = -1;
 
 template <typename T>
 T Identity<T, OperationType::Greater> = -1;
+
+template <typename T>
+T Identity<T, OperationType::Max> = std::numeric_limits<T>::max();
+
+template <typename T>
+T Identity<T, OperationType::Min> = std::numeric_limits<T>::min();
 
 template <typename T, const int id>
 T ExtractScalar(const __m256i &value);
@@ -112,7 +119,7 @@ __m256i CreateSingleValueIntegerSimd(const char &value) {
 
 template <typename T>
 static auto LoadIntegerSimd(T *data) {
-    return _mm256_load_si256((__m256i *)(data));  // todo (umqra, 11.11.18): Replace LoadU with simple Load in some cases
+    return _mm256_load_si256((__m256i *)(data));
 }
 
 template <typename T>
@@ -199,6 +206,31 @@ public:
     }
 };
 template <>
+class SimdTypedExtensions<long long, OperationType::Max> {
+public:
+    static long long ApplyScalarOperation(long long &first, long long &second) {
+        return std::max(first, second);
+    }
+    static __m256i ApplyVectorOperation(__m256i &first, __m256i &second) {
+        // note (umqra, 12.11.18): _mm256_max_epi64 supported only in AVX512 extensions
+        auto comparison = _mm256_cmpgt_epi64(first, second);
+        return _mm256_blendv_epi8(second, first, comparison);
+    }
+};
+template <>
+class SimdTypedExtensions<long long, OperationType::Min> {
+public:
+    static long long ApplyScalarOperation(long long &first, long long &second) {
+        return std::min(first, second);
+    }
+    static __m256i ApplyVectorOperation(__m256i &first, __m256i &second) {
+        // note (umqra, 12.11.18): _mm256_min_epi64 supported only in AVX512 extensions
+        auto comparison = _mm256_cmpgt_epi64(second, first);
+        return _mm256_blendv_epi8(second, first, comparison);
+    }
+};
+
+template <>
 class SimdTypedExtensions<int, OperationType::Plus> {
 public:
     static int ApplyScalarOperation(int &first, int &second) {
@@ -239,6 +271,27 @@ public:
     }
 };
 template <>
+class SimdTypedExtensions<int, OperationType::Max> {
+public:
+    static int ApplyScalarOperation(int &first, int &second) {
+        return std::max(first, second);
+    }
+    static __m256i ApplyVectorOperation(__m256i &first, __m256i &second) {
+        return _mm256_max_epi32(first, second);
+    }
+};
+template <>
+class SimdTypedExtensions<int, OperationType::Min> {
+public:
+    static int ApplyScalarOperation(int &first, int &second) {
+        return std::min(first, second);
+    }
+    static __m256i ApplyVectorOperation(__m256i &first, __m256i &second) {
+        return _mm256_min_epi32(first, second);
+    }
+};
+
+template <>
 class SimdTypedExtensions<char, OperationType::Plus> {
 public:
     static char ApplyScalarOperation(char &first, char &second) {
@@ -276,6 +329,26 @@ public:
     }
     static __m256i ApplyVectorOperation(__m256i &first, __m256i &second) {
         return _mm256_cmpgt_epi8(first, second);
+    }
+};
+template <>
+class SimdTypedExtensions<char, OperationType::Max> {
+public:
+    static char ApplyScalarOperation(char &first, char &second) {
+        return std::max(first, second);
+    }
+    static __m256i ApplyVectorOperation(__m256i &first, __m256i &second) {
+        return _mm256_max_epi8(first, second);
+    }
+};
+template <>
+class SimdTypedExtensions<char, OperationType::Min> {
+public:
+    static char ApplyScalarOperation(char &first, char &second) {
+        return std::min(first, second);
+    }
+    static __m256i ApplyVectorOperation(__m256i &first, __m256i &second) {
+        return _mm256_min_epi8(first, second);
     }
 };
 
@@ -352,6 +425,14 @@ public:
     const T *Data() const {
         return data_;
     }
+    SimdVector &MaxWith(const SimdVector<T> &other) {
+        ElementwiseOperation<T, OperationType::Max>(data_, other.data_, length_);
+        return *this;
+    }
+    SimdVector &MinWith(const SimdVector<T> &other) {
+        ElementwiseOperation<T, OperationType::Min>(data_, other.data_, length_);
+        return *this;
+    }
     SimdVector &operator+=(const SimdVector<T> &other) {
         ElementwiseOperation<T, OperationType::Plus>(data_, other.data_, length_);
         return *this;
@@ -406,6 +487,12 @@ public:
     }
     const T &operator[](size_t index) const {
         return data_[index];
+    }
+    void ScanSum() {
+    }
+    void ScanMax() {
+    }
+    void ScanMin() {
     }
     SimdMaskedVector<T> operator==(const SimdVector<T> &other) const;
     SimdMaskedVector<T> operator<(const SimdVector<T> &other) const;

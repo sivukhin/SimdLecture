@@ -261,7 +261,19 @@ TYPED_TEST(SimdVectorTest, TestScanSum) {
     TypeParam current_sum = 0;
     for (size_t id = 0; id < data.size(); id++) {
         current_sum += data[id];
-        EXPECT_EQ(simd_vector[id], current_sum);
+        EXPECT_EQ(simd_vector[id], current_sum) << "at position " << id;
+    }
+}
+
+TYPED_TEST(SimdVectorTest, TestSimpleScanSum) {
+    auto data = std::vector<TypeParam>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    auto simd_vector = SimdVector<TypeParam>(data);
+    simd_vector.ScanSum();
+
+    TypeParam current_sum = 0;
+    for (size_t id = 0; id < data.size(); id++) {
+        current_sum += data[id];
+        EXPECT_EQ(simd_vector[id], current_sum) << "at position " << id;
     }
 }
 

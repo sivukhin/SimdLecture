@@ -136,12 +136,7 @@ static auto LoadIntegerSimd256(T *data) {
 }
 
 template <typename T>
-static auto LoadIntegerSimd128(T *data) {
-    return _mm_load_si128(data);
-}
-
-template <typename T>
-void StoreIntegerSimd(T *data, const __m256i &value) {
+void StoreIntegerSimd256(T *data, const __m256i &value) {
     _mm256_store_si256(reinterpret_cast<__m256i *>(data), value);
 }
 
@@ -192,6 +187,9 @@ public:
     static __m256i ApplyVectorOperation(__m256i &first, const __m256i &second) {
         return _mm256_add_epi64(first, second);
     }
+    static __m128i ApplyVectorOperation(__m128i &first, const __m128i &second) {
+        return _mm_add_epi64(first, second);
+    }
 };
 template <>
 class SimdTypedExtensions<long long, OperationType::Minus> {
@@ -234,6 +232,9 @@ public:
         auto comparison = _mm256_cmpgt_epi64(first, second);
         return _mm256_blendv_epi8(second, first, comparison);
     }
+    static __m128i ApplyVectorOperation(__m128i &first, const __m128i &second) {
+        return _mm_max_epi64(first, second);
+    }
 };
 template <>
 class SimdTypedExtensions<long long, OperationType::Min> {
@@ -256,6 +257,9 @@ public:
     }
     static __m256i ApplyVectorOperation(__m256i &first, const __m256i &second) {
         return _mm256_add_epi32(first, second);
+    }
+    static __m128i ApplyVectorOperation(__m128i &first, const __m128i &second) {
+        return _mm_add_epi32(first, second);
     }
 };
 template <>
@@ -297,6 +301,9 @@ public:
     static __m256i ApplyVectorOperation(__m256i &first, const __m256i &second) {
         return _mm256_max_epi32(first, second);
     }
+    static __m128i ApplyVectorOperation(__m128i &first, const __m128i &second) {
+        return _mm_max_epi32(first, second);
+    }
 };
 template <>
 class SimdTypedExtensions<int, OperationType::Min> {
@@ -317,6 +324,9 @@ public:
     }
     static __m256i ApplyVectorOperation(__m256i &first, const __m256i &second) {
         return _mm256_add_epi8(first, second);
+    }
+    static __m128i ApplyVectorOperation(__m128i &first, const __m128i &second) {
+        return _mm_add_epi8(first, second);
     }
 };
 template <>
@@ -358,6 +368,9 @@ public:
     static __m256i ApplyVectorOperation(__m256i &first, const __m256i &second) {
         return _mm256_max_epi8(first, second);
     }
+    static __m128i ApplyVectorOperation(__m128i &first, const __m128i &second) {
+        return _mm_max_epi8(first, second);
+    }
 };
 template <>
 class SimdTypedExtensions<char, OperationType::Min> {
@@ -382,7 +395,7 @@ void ElementwiseOperation(T first[], T second[], size_t length) {
         auto current_block = LoadIntegerSimd256(first + id);
         auto other_block = LoadIntegerSimd256(second + id);
         current_block = SimdTypedExtensions<T, Operation>::ApplyVectorOperation(current_block, other_block);
-        StoreIntegerSimd(first + id, current_block);
+        StoreIntegerSimd256(first + id, current_block);
     }
     for (size_t id = length - length % block_size; id < length; id++) {
         first[id] = SimdTypedExtensions<T, Operation>::ApplyScalarOperation(first[id], second[id]);
@@ -423,21 +436,27 @@ void ApplyShiftForScan(__m256i &block) {
 template <typename T, OperationType Operation>
 void ZeroedScanOperation(T *target, size_t length) {
     constexpr size_t block_size = 32 / sizeof(T);
-    T total_sum = 0;
-    for (size_t id = 0; id + block_size <= length; id += block_size) {
+    T current_value = 0;
+    for (size_t id = 0; id < std::min(block_size, length); id++) {
+        current_value = target[id] = SimdTypedExtensions<T, Operation>::ApplyScalarOperation(current_value, target[id]);
+    }
+    auto mask = _mm256_insertf128_si256(_mm256_castsi128_si256(CreateSingleValueIntegerSimd128(0)), CreateSingleValueIntegerSimd128(-1), 1);
+    for (size_t id = block_size; id + block_size <= length; id += block_size) {
         auto block = LoadIntegerSimd256(target + id);
         ApplyShiftForScan<T, Operation, 1>(block);
-        auto middle_value = SimdTypedExtractor<T, block_size / 2 - 1>::ScalarFrom(block);
-        auto low_bits = CreateSingleValueIntegerSimd128(0);
-        auto high_bits = CreateSingleValueIntegerSimd128(middle_value);
-        auto last_block = _mm256_insertf128_si256(_mm256_castsi128_si256(low_bits), high_bits, 1);
-        block = SimdTypedExtensions<T, Operation>::ApplyVectorOperation(block, last_block);
-        block = SimdTypedExtensions<T, Operation>::ApplyVectorOperation(block, CreateSingleValueIntegerSimd256(total_sum));
-        StoreIntegerSimd(target + id, block);
-        total_sum = target[id + block_size - 1];
+        auto aggregated_value = CreateSingleValueIntegerSimd256(target[id - 1]);
+        auto middle_value = CreateSingleValueIntegerSimd256(SimdTypedExtractor<T, block_size / 2 - 1>::ScalarFrom(block));
+        aggregated_value = SimdTypedExtensions<T, Operation>::ApplyVectorOperation(
+            aggregated_value, SimdTypedExtensions<T, OperationType::And>::ApplyVectorOperation(middle_value, mask));
+        block = SimdTypedExtensions<T, Operation>::ApplyVectorOperation(block, aggregated_value);
+        StoreIntegerSimd256(target + id, block);
     }
+    if (length <= block_size) {
+        return;
+    }
+    current_value = target[length - length % block_size - 1];
     for (size_t id = length - length % block_size; id < length; id++) {
-        total_sum = target[id] = SimdTypedExtensions<T, Operation>::ApplyScalarOperation(total_sum, target[id]);
+        current_value = target[id] = SimdTypedExtensions<T, Operation>::ApplyScalarOperation(current_value, target[id]);
     }
 }
 

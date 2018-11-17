@@ -1,6 +1,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "simd-vector.hpp"
+#include "random.hpp"
 #include <vector>
 
 using namespace ::testing;
@@ -18,14 +19,24 @@ auto GenerateVector(T start_value, size_t count) {
     return result;
 }
 
+template <typename T>
+auto GenerateRandomVector(size_t count, T from_inclusive, T to_exclusive) {
+    auto random = Random(0);
+    auto result = std::vector<T>(count);
+    for (size_t id = 0; id < count; id++) {
+        result[id] = random.Next<T>(from_inclusive, to_exclusive);
+    }
+    return result;
+}
+
 TYPED_TEST_CASE(SimdVectorTest, BasicTypes);
 
 TYPED_TEST(SimdVectorTest, TestSumWithItself) {
     auto data = GenerateVector<TypeParam>(0, 101);
     auto simd_vector = SimdVector<TypeParam>(data);
     simd_vector += simd_vector;
-    for (TypeParam i = 0; i < data.size(); i++)
-        EXPECT_EQ(simd_vector[i], (TypeParam)(2 * i));
+    for (size_t id = 0; id < data.size(); id++)
+        EXPECT_EQ(simd_vector[id], (TypeParam)(2 * data[id]));
 }
 
 TYPED_TEST(SimdVectorTest, TestSubtractFromItself) {
@@ -116,6 +127,24 @@ TYPED_TEST(SimdVectorTest, TestAggregateOr) {
     for (auto&& value : data)
         expected_or = (TypeParam)(expected_or | value);
     EXPECT_EQ(simd_vector.AggregateOr(), expected_or);
+}
+
+TYPED_TEST(SimdVectorTest, TestAggregateMax) {
+    auto data = GenerateRandomVector<TypeParam>(101, -100, 100);
+    auto simd_vector = SimdVector<TypeParam>(data);
+    TypeParam expected_max = -100;
+    for (auto&& value : data)
+        expected_max = std::max(expected_max, value);
+    EXPECT_EQ(simd_vector.AggregateMax(), expected_max);
+}
+
+TYPED_TEST(SimdVectorTest, TestAggregateMin) {
+    auto data = GenerateRandomVector<TypeParam>(101, -100, 100);
+    auto simd_vector = SimdVector<TypeParam>(data);
+    TypeParam expected_max = 100;
+    for (auto&& value : data)
+        expected_max = std::min(expected_max, value);
+    EXPECT_EQ(simd_vector.AggregateMin(), expected_max);
 }
 
 TYPED_TEST(SimdVectorTest, TestEmptyAggregateAnd) {
@@ -221,5 +250,41 @@ TEST(SimdVectorTest, TestBigLongLongMin) {
     simd_vector.MinWith(SimdVector<long long>(data2));
     for (size_t id = 0; id < data1.size(); id++) {
         EXPECT_EQ(simd_vector[id], std::min(data1[id], data2[id]));
+    }
+}
+
+TYPED_TEST(SimdVectorTest, TestScanSum) {
+    auto data = GenerateRandomVector<TypeParam>(101, -10, 10);
+    auto simd_vector = SimdVector<TypeParam>(data);
+    simd_vector.ScanSum();
+
+    TypeParam current_sum = 0;
+    for (size_t id = 0; id < data.size(); id++) {
+        current_sum += data[id];
+        EXPECT_EQ(simd_vector[id], current_sum);
+    }
+}
+
+TYPED_TEST(SimdVectorTest, TestScanMax) {
+    auto data = GenerateRandomVector<TypeParam>(101, -100, 100);
+    auto simd_vector = SimdVector<TypeParam>(data);
+    simd_vector.ScanZeroedMax();
+
+    TypeParam current_max = 0;
+    for (size_t id = 0; id < data.size(); id++) {
+        current_max = std::max(current_max, data[id]);
+        EXPECT_EQ(simd_vector[id], current_max);
+    }
+}
+
+TYPED_TEST(SimdVectorTest, TestScanMaxSmallArray) {
+    auto data = GenerateRandomVector<TypeParam>(3, -100, 100);
+    auto simd_vector = SimdVector<TypeParam>(data);
+    simd_vector.ScanZeroedMax();
+
+    TypeParam current_max = 0;
+    for (size_t id = 0; id < data.size(); id++) {
+        current_max = std::max(current_max, data[id]);
+        EXPECT_EQ(simd_vector[id], current_max);
     }
 }

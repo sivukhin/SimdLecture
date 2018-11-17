@@ -10,15 +10,19 @@ private:
 public:
     explicit Random(int seed) : _generator(seed) {
     }
-    size_t NextInt(size_t from_inclusive, size_t to_exclusive) {
-        return std::uniform_int_distribution<size_t>(from_inclusive, to_exclusive - 1)(_generator);
+    template <typename T>
+    T Next(T from_inclusive, T to_exclusive) {
+        return std::uniform_int_distribution<T>(from_inclusive, to_exclusive - 1)(_generator);
     }
-    uint64_t NextLong(uint64_t from_inclusive, uint64_t to_exclusive) {
-        return std::uniform_int_distribution<uint64_t>(from_inclusive, to_exclusive - 1)(_generator);
+    int32_t NextInt(int32_t from_inclusive, int32_t to_exclusive) {
+        return Next<int32_t>(from_inclusive, to_exclusive);
+    }
+    int64_t NextLong(int64_t from_inclusive, int64_t to_exclusive) {
+        return Next<int64_t>(from_inclusive, to_exclusive);
     }
     template <typename T>
     T Sample(std::vector<T> sequence) {
-        return sequence[NextInt(0, sequence.size())];
+        return sequence[NextInt(0, static_cast<int32_t>(sequence.size()))];
     }
     std::mt19937_64 Generator() const {
         return _generator;

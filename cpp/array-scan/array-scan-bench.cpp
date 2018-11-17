@@ -52,21 +52,39 @@ static void ScanSumNaiveInt_Benchmark(State &state) {
     }
 }
 
-static void ScanSumSimdChar_Benchmark(State &state) {
+static void ScanMaxSimdLongLong_Benchmark(State &state) {
     size_t size = static_cast<size_t>(state.range(0));
-    ArrayAllocator<char> allocator(size);
+    ArrayAllocator<long long> allocator(size);
     auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
     for (auto _ : state) {
-        DoNotOptimize(ScanSumNaive<char>(array, size));
+        DoNotOptimize(ScanMaxSimd<long long>(array, size));
     }
 }
 
-static void ScanSumNaiveChar_Benchmark(State &state) {
+static void ScanMaxNaiveLongLong_Benchmark(State &state) {
     size_t size = static_cast<size_t>(state.range(0));
-    ArrayAllocator<char> allocator(size);
+    ArrayAllocator<long long> allocator(size);
     auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
     for (auto _ : state) {
-        DoNotOptimize(ScanSumNaive<char>(array, size));
+        DoNotOptimize(ScanMaxNaive<long long>(array, size));
+    }
+}
+
+static void ScanMaxSimdInt_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
+    for (auto _ : state) {
+        DoNotOptimize(ScanMaxSimd<int>(array, size));
+    }
+}
+
+static void ScanMaxNaiveInt_Benchmark(State &state) {
+    size_t size = static_cast<size_t>(state.range(0));
+    ArrayAllocator<int> allocator(size);
+    auto array = InitializeWithRandomNumbers(allocator.GetAligned(), size);
+    for (auto _ : state) {
+        DoNotOptimize(ScanMaxNaive<int>(array, size));
     }
 }
 
@@ -80,7 +98,10 @@ BENCHMARK(ScanSumSimdLongLong_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(ScanSumNaiveLongLong_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(ScanSumSimdInt_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(ScanSumNaiveInt_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(ScanSumSimdChar_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(ScanSumNaiveChar_Benchmark)->Apply(CustomizeBenchmark);
+
+BENCHMARK(ScanMaxSimdLongLong_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(ScanMaxNaiveLongLong_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(ScanMaxSimdInt_Benchmark)->Apply(CustomizeBenchmark);
+BENCHMARK(ScanMaxNaiveInt_Benchmark)->Apply(CustomizeBenchmark);
 
 BENCHMARK_MAIN();

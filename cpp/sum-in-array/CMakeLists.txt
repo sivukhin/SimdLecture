@@ -8,7 +8,7 @@ target_compile_options(sum-in-array-test PUBLIC "-march=native")
 
 add_executable(sum-in-array-bench sum-in-array-bench.cpp)
 target_link_libraries(sum-in-array-bench benchmark pthread commons)
-target_compile_options(sum-in-array-bench PUBLIC "-march=native" "-O3")
+target_compile_options(sum-in-array-bench PUBLIC "-march=native" "-O2")
 
 add_executable(sum-in-array-bench-fool sum-in-array-bench.cpp)
 target_link_libraries(sum-in-array-bench-fool benchmark pthread commons)

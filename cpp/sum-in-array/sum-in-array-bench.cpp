@@ -91,13 +91,13 @@ static void CustomizeBenchmark(benchmark::internal::Benchmark *benchmark) {
     }
 }
 
-BENCHMARK(SimdVectorAligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(LoaduUnaligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(NaiveUnaligned_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(LoadAligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(LoaduAligned_Benchmark)->Apply(CustomizeBenchmark);
 BENCHMARK(NaiveAligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(MemoryAccessAligned_Benchmark)->Apply(CustomizeBenchmark);
-BENCHMARK(MemoryAccessUnaligned_Benchmark)->Apply(CustomizeBenchmark);
+//BENCHMARK(SimdVectorAligned_Benchmark)->Apply(CustomizeBenchmark);
+//BENCHMARK(LoaduUnaligned_Benchmark)->Apply(CustomizeBenchmark);
+//BENCHMARK(NaiveUnaligned_Benchmark)->Apply(CustomizeBenchmark);
+//BENCHMARK(LoaduAligned_Benchmark)->Apply(CustomizeBenchmark);
+//BENCHMARK(MemoryAccessAligned_Benchmark)->Apply(CustomizeBenchmark);
+//BENCHMARK(MemoryAccessUnaligned_Benchmark)->Apply(CustomizeBenchmark);
 
 BENCHMARK_MAIN();
